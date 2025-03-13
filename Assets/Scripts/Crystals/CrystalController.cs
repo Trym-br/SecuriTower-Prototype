@@ -26,6 +26,7 @@ public class CrystalController : MonoBehaviour
         
         ActiveInputs = new bool[InputPoints.Length];
         ActiveOutputs = new bool[OutputPoints.Length];
+        OutputLastHit = new GameObject[OutputPoints.Length];
         Array.Fill(ActiveInputs, false);
         Array.Fill(ActiveOutputs, false);
         crystalConditionals = new Func<bool>[]
@@ -47,6 +48,14 @@ public class CrystalController : MonoBehaviour
         };
     }
 
+    // public void move()
+    // {
+    //     foreach (var point in OutputPoints)
+    //     {
+    //         SendLaser(point, false);
+    //     }
+    // }
+
     private void Update()
     {
         
@@ -55,8 +64,8 @@ public class CrystalController : MonoBehaviour
     public void OnLaserInteract(Vector3 Direction, bool Attach)
     {
         // Handle Inputs
-        int Index = Array.IndexOf(InputPoints, Direction/2);
-        // print("Direction: " + Direction/2 + " / " + InputPoints[0] + " | " + Index);
+        int Index = Array.IndexOf(InputPoints, -Direction);
+        print("Direction: " + Direction/2 + " / " + InputPoints[0] + " | " + Index);
         if (Index != -1)
         {
             ActiveInputs[Index] = Attach;
@@ -76,15 +85,26 @@ public class CrystalController : MonoBehaviour
 
         if (clearFlag)
         {
-            /*Array.Fill(ActiveOutputs, true);*/
-            foreach (var outputPoint in OutputPoints)
+            ActiveOutputs[0] = true;
+            for (int i = 0; i < OutputPoints.Length; i++)
             {
-                SendLaser(outputPoint);
+                print(i + " outputPoint: " + OutputPoints[i]);
+                SendLaser(OutputPoints[i], true);
+            }
+        }
+        else if(ActiveOutputs[0])
+        {
+            for (int i = 0; i < OutputPoints.Length; i++)
+            {
+                print(i + " outputPoint: " + OutputPoints[i]);
+                SendLaser(OutputPoints[i], false);
+                OnLaserInteract(OutputPoints[i],false);
+                ActiveOutputs[i] = false; 
             }
         }
     }
 
-    private void SendLaser(Vector3 OutputPoint)
+    private void SendLaser(Vector3 OutputPoint, bool isON)
     {
         RaycastHit2D hit = Physics2D.Raycast(
             transform.position + OutputPoint,
@@ -94,8 +114,24 @@ public class CrystalController : MonoBehaviour
         // print("Found an object - distance: " + hit.distance);
         if (hit.distance > 0)
         {
+            // print("Laser blocked?: " + OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)] != null + " / " + hit.rigidbody.gameObject != OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)]);
+            if (OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)] != null && hit.rigidbody.gameObject != OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)])
+            {
+                print("Laser blocked: ");
+                print("saved object: " + OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)].name);
+                OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)].GetComponent<CrystalController>().OnLaserInteract(OutputPoint, false);
+            }
             Debug.DrawLine(transform.position + OutputPoint, hit.point, Color.green);
-            OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)] = hit.rigidbody.gameObject;
+            // print("Index of OutputPoint " + Array.IndexOf(OutputPoints, OutputPoint));
+            // print("current val: " + OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)]);
+            // print("current hit: " + hit.rigidbody.gameObject);
+            // print("current hit: " + hit.rigidbody.gameObject.name);
+            if (hit.rigidbody.gameObject.CompareTag("Crystal"))
+            {
+                print("Activating laser again");
+                hit.rigidbody.gameObject.GetComponent<CrystalController>().OnLaserInteract(OutputPoint, isON);
+                OutputLastHit[Array.IndexOf(OutputPoints, OutputPoint)] = hit.rigidbody.gameObject;
+            }
         }
         else
         {

@@ -25,8 +25,12 @@ public class CrystalSender : MonoBehaviour
         {
             Debug.DrawLine(transform.position + OutputPoints[0], hit.point, Color.green);
         }
-        hit.rigidbody.gameObject.GetComponent<CrystalController>().OnLaserInteract(Vector2.left, isON);
-        // Debug.DrawRay(transform.position + OutputPoints[0], Vector3.right, Color.red);
+
+        if (hit.rigidbody.gameObject.CompareTag("Crystal"))
+        {
+            hit.rigidbody.gameObject.GetComponent<CrystalController>().OnLaserInteract(Vector2.left, isON);
+        }
+        Debug.DrawRay(transform.position + OutputPoints[0], Vector3.right, Color.red);
         
     }
     private void OnDrawGizmos()
